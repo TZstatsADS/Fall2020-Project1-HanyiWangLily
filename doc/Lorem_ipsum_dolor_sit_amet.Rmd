@@ -1,0 +1,30 @@
+---
+title: "Lorem ipsum dolor sit amet"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load libraries, include=FALSE}
+library(tidyverse)
+library(tidytext)
+library(ggplot2)
+```
+
+## Data Preprocessing
+```{r}
+
+```
+
+## Data Visualization
+```{r}
+
+```
+
+## Conclusion
+```{r}
+
+```
+
