@@ -1,0 +1,274 @@
+---
+title: "Lorem ipsum dolor sit amet"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#install.packages('highcharter',dependencies = TRUE,repo = 'https://mac.R-project.org'，INSTALL_opts = c('--no-lock'))
+```
+
+```{r load libraries, include=FALSE}
+library(DT)
+library(magrittr)
+library(highcharter)
+library(tidyverse)
+library(RColorBrewer)
+library(fmsb)
+library(ggplot2)
+library("gplots")
+library(dplyr)
+library(forcats)
+```
+
+```{r data preprocessing, include=FALSE}
+rawData = read.csv('/Users/hanyiwang/Desktop/STAT4243/Project1/Fall2020-Project1-HanyiWangLily/data/anes_pilot_2020ets_csv.csv')
+
+# record importance of each political stance or self identity
+### scale 1-7 and 1-5
+rawData$imm_imp=abs(rawData$wall7-4)
+rawData$abo_imp=abs(rawData$abort_imp-3)
+rawData$ineq_imp=abs(rawData$richpoor2-3)
+rawData$multicul_imp=abs(rawData$diversity7-4)
+rawData$healthcare_imp=(abs(rawData$hlthcare1-4) + abs(rawData$hlthcare2-3)*1.5)/2
+
+rawData$billtax1[rawData$billtax1 > 7]=0
+rawData$billtax2[rawData$billtax2 > 7]=0
+rawData$tax_imp = abs(rawData$billtax1 + rawData$billtax2-4)
+
+for (i in c(
+'groupid1a_bla','groupid1a_asi','groupid1a_hpi','groupid1a_lat','groupid1a_whi','groupid1a_nat',
+'groupid1b_bla','groupid1b_asi','groupid1b_hpi','groupid1b_lat','groupid1b_whi','groupid1b_nat',
+'groupid2a_bla','groupid2a_asi','groupid2a_hpi','groupid2a_lat','groupid2a_whi','groupid2a_nat',
+'groupid2b_bla','groupid2b_asi','groupid2b_hpi','groupid2b_lat','groupid2b_whi','groupid2b_nat',
+'groupid3a_bla','groupid3a_asi','groupid3a_hpi','groupid3a_lat','groupid3a_whi','groupid3a_nat',
+'groupid2a_bla','groupid3b_asi','groupid3b_hpi','groupid3b_lat','groupid3b_whi','groupid3b_nat'
+ )){
+  rawData[,paste(i)][rawData[,paste(i)]>5]=0}
+
+for (i in c('asi','bla','hpi','lat','whi','nat')){
+  rawData[,paste0('groupid_',i)]=(
+    rawData[,paste0('groupid1a_',i)]+rawData[,paste0('groupid1b_',i)]+
+    rawData[,paste0('groupid2a_',i)]+rawData[,paste0('groupid2b_',i)]+
+    rawData[,paste0('groupid3a_',i)]+rawData[,paste0('groupid3b_',i)])/3
+}
+
+# seperate data by the race
+lat = rawData[rawData$latin1 ==1,] # Hispanic, Latino, or Spanish
+whi = rawData[rawData$race1_white == 1,] # White
+bla = rawData[rawData$race1_black == 1,]# Black or African American
+nat = rawData[rawData$race1_namer == 1,]# American Indian or Alaska Native
+asi = rawData[rawData$race1_asian == 1,]# Asian
+hpi = rawData[rawData$race1_hpi == 1,]# Native Hawaiian, or other Pacific islander
+
+# seperate data by feminist or not
+femData = rawData[rawData$femid1a==1 | rawData$femid1b==1 ,]
+
+# seperate data by both
+femLat = femData[femData$latin1 ==1,] # Hispanic, Latino, or Spanish
+femWhi = femData[femData$race1_white == 1,] # White
+femBla = femData[femData$race1_black == 1,]# Black or African American
+femNat = femData[femData$race1_namer == 1,]# American Indian or Alaska Native
+femAsi = femData[femData$race1_asian == 1,]# Asian
+femHpi = femData[femData$race1_hpi == 1,]# Native Hawaiian, or other Pacific islander
+
+#seperate by party
+repub = rawData[rawData$pid1r==1,]
+democ = rawData[rawData$pid1r==2,]
+indep = rawData[rawData$pid1r==3,]
+other = rawData[rawData$pid1r==4,]
+```
+
+### How do people interpret their identity and political tendency into voting?
+
+Everyone plays many roles in daily lives. We use various standards to categorize people into different groups. What inspires me to explore this topic is a reading I encountered last semester regarding the intersection of race and gender. In that article, the author elaborated that women of color undergo more serious disadvantages because they are of two disadvantaged group, people of color and women.That they have to balance between their two identities, which often contradict with each other, results in harder choices while pursuing equal rights.
+
+This phenomenon inspired me into conducting this research on the hierarchical priority of self identity. To put it in a simple way, do feminists of color first view themselves as a feminist, or as an antiracist?
+
+Also, political tendencies affect the result of voting to a great extent. It is not strange to see someone vote against one of the candidate because of one of his or her policy.
+
+So to generalize and sum up, what is the prior identity and political tendency when people are voting?
+
+
+#### Distribution of Races
+
+To have a brief understanding of the data and check conformity, we could first look at the demographic formation of the feminists group and the overall participants.
+
+```{r pie chart1, echo=FALSE}
+femSlices <- c(nrow(femNat), nrow(femWhi),nrow(femBla),nrow(femNat), nrow(femAsi),nrow(femHpi))
+
+femLbls <- c("Hispanic, Latino, or Spanish", "White", "Black or African American", "American Indian or Alaska Native", "Asian","Native Hawaiian, or other Pacific islander")
+
+pie(femSlices, femLbls , main="Distribution of Races in Feminisits")
+```
+
+```{r pie chart 2, echo=FALSE}
+slices <- c(nrow(lat), nrow(whi),nrow(bla),nrow(nat), nrow(asi),nrow(hpi))
+
+lbls <- c("Hispanic, Latino, or Spanish", "White", "Black or African American", "American Indian or Alaska Native", "Asian","Native Hawaiian, or other Pacific islander")
+
+pie(slices, lbls , main="Distribution of Races in all Participants")
+
+```
+
+From the pie plots above we could see that white people come up with about 2/3 of the population. The distribution of different races among feminists generally ally with that of the whole population.
+
+#### Self Identification 
+
+First come to our very first question. What is the priority of people identifying themselves?
+
+We compare between feminists of different ethnicity. The questionnare use degree of 1-5 or 1-7 to represent importance. Here we do not consider whether the effect is negative or positive, but focus on the _absolute value of the effect_. So we change degree 12345 to 21012, and scale it to compare with the 1-7 evaluation scale.
+
+```{r barplot, echo=FALSE}
+femID = c( mean(abs(femLat$femid2_fem-3)*1.5), mean(abs(femWhi$femid2_fem-3)*1.5),
+           mean(abs(femBla$femid2_fem-3)*1.5), mean(abs(femNat$femid2_fem-3)*1.5),
+           mean(abs(femAsi$femid2_fem-3)*1.5), mean(abs(femHpi$femid2_fem-3)*1.5))
+
+femIDrace = c( mean(abs(femLat$groupid_lat-3)*1.5), mean(abs(femWhi$groupid_whi-3)*1.5),
+                mean(abs(femBla$groupid_bla-3)*1.5), mean(abs(femNat$groupid_nat-3)*1.5),
+                mean(abs(femAsi$groupid_asi-3)*1.5), mean(abs(femHpi$groupid_hpi-3)*1.5))
+
+femIDdata <- data.frame( lat = c(femID[1],femIDrace[1]),
+                           whi = c(femID[2],femIDrace[2]),
+                           bla = c(femID[3],femIDrace[3]),
+                           nat = c(femID[4],femIDrace[4]),
+                           asi = c(femID[5],femIDrace[5]),
+                           hpi = c(femID[6],femIDrace[6]))
+
+barplot(as.matrix(femIDdata), main = "Self-identity of Feminists", xlab = "races",
+        col =c("pink","skyblue"),beside = TRUE)
+legend("topleft", c("feminist-identity","race-identity"),fill = c("pink","skyblue"))
+```
+
+From the above bar plot we could come to the conclusion that 
+
+> Generally, feminism is more important than ethnicity to _feminists_.
+
+The special case is black or African American feminists. 
+
+> Black or African American feminists tend to value ethnicity more than feminism.
+
+This concide with the reality that black people put more efforts on equal right activities compared to other races. It sounds reasonable that they need to balance between the two rights.
+
+#### Other Explanations? --- How Important are Identities
+
+But there might also be other possibilities to this question. To make the conclustion more solid, I compare all the identity groups' self consciousness towards their groups.
+
+```{r importance,echo=FALSE}
+id_imp = data.frame(
+  identity = c('repub','democ','indep','femi','anti','neit','lat','whi','bla','nat','asi','hpi'),
+  importance = c(mean(abs((repub$pidstr1+repub$pidstr2+repub$pidstr3)/3-3)*1.5),
+                 mean(abs((democ$pidstr1+democ$pidstr2+democ$pidstr3)/3-3)*1.5),
+                 mean(abs((indep$pidstr1+indep$pidstr2+indep$pidstr3)/3-3)*1.5),
+                 mean(abs(femData$femid2_fem-3)*1.5),
+                 mean(abs(rawData[rawData$femid1a==2 | rawData$femid1b==2 ,]$femid2_anti-3)*1.5),
+                 mean(abs(rawData[rawData$femid1a==3 | rawData$femid1b==3 ,]$femid2_nei-3)*1.5),
+                 mean(abs(lat$groupid_lat-3)*1.5),
+                 mean(abs(whi$groupid_whi-3)*1.5),
+                 mean(abs(bla$groupid_bla-3)*1.5),
+                 mean(abs(nat$groupid_nat-3)*1.5),
+                 mean(abs(asi$groupid_asi-3)*1.5),
+                 mean(abs(hpi$groupid_hpi-3)*1.5)))
+
+id_imp %>%
+  mutate(identity = fct_reorder(identity, importance)) %>%
+  ggplot(aes(x=identity, y=importance))+
+    geom_segment( aes(xend=identity, yend=0)) +
+    geom_point( size=4, color="orange") +
+    theme_bw() +coord_flip() +
+    xlab("")
+
+```
+It is revealed that among all possible identities, black people is still the one with the highest priority. This conclusion weakens the statement that black feminists pay more attention to race because they need to choose between 2 disadvantages groups. 
+
+Since black people tend to value race identity much, so the outliner of the former barplot of race identity in feminists is highly possible caused by this, instead of other reasons we talked about.
+
+#### Comparison among Political Tendencies
+
+Next I'm interested in how the _political tendencies_ affect voters. Using the same way to evaluate importance, I used a heatmap to illustrate this topic. From the questionnaire I summed up some political factors that are mentioned and evaluated in the questionnaire. Though I'm not an expertise in social sciencs, we could still see something from the results.
+
+```{r heatmap,echo = FALSE}
+imm_imp = c(mean(femLat$imm_imp),mean(femWhi$imm_imp),mean(femBla$imm_imp),
+           mean(femNat$imm_imp),mean(femAsi$imm_imp),mean(femHpi$imm_imp))
+abort_imp = c(mean(femLat$abort_imp),mean(femWhi$abort_imp),mean(femBla$abort_imp),
+           mean(femNat$abort_imp),mean(femAsi$abort_imp),mean(femHpi$abort_imp))
+ineq_imp = c(mean(femLat$ineq_imp),mean(femWhi$ineq_imp),mean(femBla$ineq_imp),
+           mean(femNat$ineq_imp),mean(femAsi$ineq_imp),mean(femHpi$ineq_imp))
+multicul_imp = c(mean(femLat$multicul_imp),mean(femWhi$multicul_imp),mean(femBla$multicul_imp),
+           mean(femNat$multicul_imp),mean(femAsi$multicul_imp),mean(femHpi$multicul_imp))
+tax_imp = c(mean(femLat$tax_imp),mean(femWhi$tax_imp),mean(femBla$tax_imp),
+           mean(femNat$tax_imp),mean(femAsi$tax_imp),mean(femHpi$tax_imp))
+
+heatmapData = data.frame('fem_id'=femID,'race_id'=femIDrace,
+                     'immig'=imm_imp,'abor'=abort_imp,'income_ineq'=ineq_imp,
+                     'multicul'=multicul_imp,'tax'=tax_imp)
+row.names(heatmapData) = c('lat','whi','bla','nat','asi','hpi')
+
+heatmap.2(as.matrix(heatmapData),col = colorRampPalette(brewer.pal(8, "PiYG"))(25),trace='none',
+          density.info = "none", xlab ='self-identity and political tendency',
+          cexRow = 1,cexCol = 1, ylab = 'races',
+          main = "Heatmap of feminists' poltical tendencies",
+          cellnote = round(as.matrix(heatmapData),digits=2),notecol = 'black')
+```
+The value of black people's race identity stands out, demonstrating saliently that
+
+> Black people have the highest race identity importance index.
+
+This map also gives us insights on the priority of policies of feminists. Kind of counterintuitively, the priority orders of politics issues are:
+
+> Immigration > Multiculturism > Aborthion > Tax > Feminists' Identity > Income Inequality > Races' Identity
+
+Even for feminists, feminism is not the biggest issue in considering a new president.
+
+The next is a radar plot comparing the same thing but with a better visualization display.
+
+```{r radar chart, echo = FALSE}
+fmsb_data = data.frame(
+  "immigration" =heatmapData$immig,
+  "multiculturism" =heatmapData$multicul, 
+  "abortion"=heatmapData$abor,
+  "tax"=heatmapData$tax, 
+  "income inequality"=heatmapData$income_ineq)
+fmsb_data <- rbind(rep(3,5) , rep(0,15),fmsb_data )
+rownames(fmsb_data) <- c('1','2','lat','whi','bla','nat','asi','hpi')
+
+color = c(1,2,3,4,5,6)
+radarchart(fmsb_data,plwd=0.8, plty=1, cglcol="grey", pcol =color,
+           cglty=1, axislabcol="grey", caxislabels=seq(0,20,5), cglwd=0.3, vlcex=0.8 )
+
+legend(x=1.5, y=1, legend = rownames(fmsb_data[-c(1,2),]), bty = "n", pch=20 , text.col =
+         "grey",col =color)
+
+```
+
+Each ethinic groups perform similarly except for Hispanic, Latino and Spanish people have more "extreme" ideas towards multiculturalism and immigration.
+
+Is it because of their culture background OR is there something wrong with the data analysis process?
+
+```{r}
+nrow(femHpi)
+```
+
+As we could see here, Hispanic, Latino and Spanish people have a rather small sample size. Thus it is more than simple to have more extreme values. It is the problem of our data.
+
+#### Conclusions
+
+- No matter which group of race, feminists tend to have policy priority like this:
+
+Immigration > Multiculturalism > Aborthion > Tax > Feminists’ Identity > Income Inequality > Races’ Identity
+
+- Black people have the highest race identity importance index.
+- Black or African American feminists tend to value ethnicity  more than feminism.
+
+#### Thoughts on the Questionnaire and My Research
+- The questionnaire give much space on multiculturalism and racism. While there are many questions about that, it gives people the feeling that it is more important and deserve better focus. However, there are only 2 questions about feminism, leaving it rather neglectable and thus may cause bias.
+
+- The sample size I'm dealing with is rather small. Since I'm interested in feminism, I did my analysis on feminists of the voters. Like the HPI feminists only has a sample size of 4. Although that's what I'm interested in ,it's still true that I did not fully utilize the data.
+
+
+
+
+
+**Thanks for watching**
