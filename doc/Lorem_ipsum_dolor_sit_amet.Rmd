@@ -249,22 +249,28 @@ Is it because of their culture background OR is there something wrong with the d
 
 I used a bubble chart to briefly address this question.
 
-```{r bubble chart, echo=FALSE}
-data_bubble = t( femIDdata)
-colnames(data_bubble) = c('feminist_id','race_id')
-data_bubble$num =c(nrow(femLat),nrow(femWhi),nrow(femBla),nrow(femNat),nrow(femAsi),nrow(femHpi))
-
-#hchart(data_bubble, "scatter", hcaes(feminist_id, feminist_id, z = num, color = hp)) %>%
-#  hc_title(text = "Scatter chart of different races' people's focus")
+```{r}
+nrow(femHpi)
 ```
 
 As we could see here, Hispanic, Latino and Spanish people have a rather small sample size. Thus it is more than simple to have more extreme values. It is the problem of our data.
 
 #### Conclusions
 
-- No matter which group of 
+- No matter which group of race, feminists tend to have policy priority like this:
+
 Immigration > Multiculturalism > Aborthion > Tax > Feminists’ Identity > Income Inequality > Races’ Identity
+
 - Black people have the highest race identity importance index.
 - Black or African American feminists tend to value ethnicity  more than feminism.
 
 #### Thoughts on the Questionnaire and My Research
+- The questionnaire give much space on multiculturalism and racism. While there are many questions about that, it gives people the feeling that it is more important and deserve better focus. However, there are only 2 questions about feminism, leaving it rather neglectable and thus may cause bias.
+
+- The sample size I'm dealing with is rather small. Since I'm interested in feminism, I did my analysis on feminists of the voters. Like the HPI feminists only has a sample size of 4. Although that's what I'm interested in ,it's still true that I did not fully utilize the data.
+
+
+
+
+
+**Thanks for watching**
