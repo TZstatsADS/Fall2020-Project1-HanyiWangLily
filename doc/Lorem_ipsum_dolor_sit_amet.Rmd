@@ -247,8 +247,6 @@ Each ethinic groups perform similarly except for Hispanic, Latino and Spanish pe
 
 Is it because of their culture background OR is there something wrong with the data analysis process?
 
-I used a bubble chart to briefly address this question.
-
 ```{r}
 nrow(femHpi)
 ```
