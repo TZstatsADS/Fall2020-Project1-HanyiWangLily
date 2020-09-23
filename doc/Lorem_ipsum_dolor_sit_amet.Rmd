@@ -5,22 +5,136 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+#install.packages('highcharter',dependencies = TRUE,repo = 'https://mac.R-project.org'，INSTALL_opts = c('--no-lock'))
 ```
 
 ```{r load libraries, include=FALSE}
-library(tidyverse)
-library(tidytext)
+library(DT)
+library(magrittr)
+#library(highcharter)
+#library(tidyverse)
+library(RColorBrewer)
 library(ggplot2)
+library("gplots")
 ```
 
-## Data Preprocessing
-```{r}
+```{r data preprocessing, include=FALSE}
+rawData = read.csv('/Users/hanyiwang/Desktop/STAT4243/Project1/Fall2020-Project1-HanyiWangLily/data/anes_pilot_2020ets_csv.csv')
 
+# record importance of each political stance or self identity
+### scale 1-7 and 1-5
+rawData$imm_imp=abs(rawData$wall7-4)
+rawData$abo_imp=abs(rawData$abort_imp-3)
+rawData$ineq_imp=abs(rawData$richpoor2-3)
+rawData$multicul_imp=abs(rawData$diversity7-4)
+rawData$healthcare_imp=(abs(rawData$hlthcare1-4) + abs(rawData$hlthcare2-3)*1.5)/2
+
+rawData$billtax1[rawData$billtax1 > 7]=0
+rawData$billtax2[rawData$billtax2 > 7]=0
+rawData$tax_imp = abs(rawData$billtax1 + rawData$billtax2-4)
+
+for (i in c(
+'groupid1a_bla','groupid1a_asi','groupid1a_hpi','groupid1a_lat','groupid1a_whi','groupid1a_nat',
+'groupid1b_bla','groupid1b_asi','groupid1b_hpi','groupid1b_lat','groupid1b_whi','groupid1b_nat',
+'groupid2a_bla','groupid2a_asi','groupid2a_hpi','groupid2a_lat','groupid2a_whi','groupid2a_nat',
+'groupid2b_bla','groupid2b_asi','groupid2b_hpi','groupid2b_lat','groupid2b_whi','groupid2b_nat',
+'groupid3a_bla','groupid3a_asi','groupid3a_hpi','groupid3a_lat','groupid3a_whi','groupid3a_nat',
+'groupid2a_bla','groupid3b_asi','groupid3b_hpi','groupid3b_lat','groupid3b_whi','groupid3b_nat'
+ )){
+  rawData[,paste(i)][rawData[,paste(i)]>5]=0}
+
+for (i in c('asi','bla','hpi','lat','whi','nat')){
+  rawData[,paste0('groupid_',i)]=(
+    rawData[,paste0('groupid1a_',i)]+rawData[,paste0('groupid1b_',i)]+
+    rawData[,paste0('groupid2a_',i)]+rawData[,paste0('groupid2b_',i)]+
+    rawData[,paste0('groupid3a_',i)]+rawData[,paste0('groupid3b_',i)])/3
+}
+
+# seperate data by the race
+lat = rawData[rawData$latin1 ==1,] # Hispanic, Latino, or Spanish
+whi = rawData[rawData$race1_white == 1,] # White
+bla = rawData[rawData$race1_black == 1,]# Black or African American
+nat = rawData[rawData$race1_namer == 1,]# American Indian or Alaska Native
+asi = rawData[rawData$race1_asian == 1,]# Asian
+hpi = rawData[rawData$race1_hpi == 1,]# Native Hawaiian, or other Pacific islander
+
+# seperate data by feminist or not
+femData = rawData[rawData$femid1a==1 | rawData$femid1b==1 ,]
+
+# seperate data by both
+femLat = femData[femData$latin1 ==1,] # Hispanic, Latino, or Spanish
+femWhi = femData[femData$race1_white == 1,] # White
+femBla = femData[femData$race1_black == 1,]# Black or African American
+femNat = femData[femData$race1_namer == 1,]# American Indian or Alaska Native
+femAsi = femData[femData$race1_asian == 1,]# Asian
+femHpi = femData[femData$race1_hpi == 1,]# Native Hawaiian, or other Pacific islander
 ```
 
-## Data Visualization
-```{r}
+### distribution of races
 
+```{r, echo=FALSE}
+femSlices <- c(nrow(femNat), nrow(femWhi),nrow(femBla),nrow(femNat), nrow(femAsi),nrow(femHpi))
+
+femLbls <- c("Hispanic, Latino, or Spanish", "White", "Black or African American", "American Indian or Alaska Native", "Asian","Native Hawaiian, or other Pacific islander")
+
+pie(femSlices, femLbls , main="Distribution of Races in Feminisits")
+```
+
+```{r, echo=FALSE}
+slices <- c(nrow(lat), nrow(whi),nrow(bla),nrow(nat), nrow(asi),nrow(hpi))
+
+lbls <- c("Hispanic, Latino, or Spanish", "White", "Black or African American", "American Indian or Alaska Native", "Asian","Native Hawaiian, or other Pacific islander")
+
+pie(slices, lbls , main="Distribution of Races in all Participants")
+
+```
+## Self Identification 
+
+among feminists and races
+
+
+```{r barplot, echo=FALSE}
+femID = c( mean(abs(femLat$femid2_fem-3)*1.5), mean(abs(femWhi$femid2_fem-3)*1.5),
+           mean(abs(femBla$femid2_fem-3)*1.5), mean(abs(femNat$femid2_fem-3)*1.5),
+           mean(abs(femAsi$femid2_fem-3)*1.5), mean(abs(femHpi$femid2_fem-3)*1.5))
+
+femIDrace = c( mean(abs(femLat$groupid_lat-3)*1.5), mean(abs(femWhi$groupid_whi-3)*1.5),
+                mean(abs(femBla$groupid_bla-3)*1.5), mean(abs(femNat$groupid_nat-3)*1.5),
+                mean(abs(femAsi$groupid_asi-3)*1.5), mean(abs(femHpi$groupid_hpi-3)*1.5))
+
+femIDdata <- data.frame( lat = c(femID[1],femIDrace[1]),
+                           whi = c(femID[2],femIDrace[2]),
+                           bla = c(femID[3],femIDrace[3]),
+                           nat = c(femID[4],femIDrace[4]),
+                           asi = c(femID[5],femIDrace[5]),
+                           hpi = c(femID[6],femIDrace[6]))
+
+barplot(as.matrix(femIDdata), main = "Survival of Each Class", xlab = "races",
+        col =c("pink","skyblue"),beside = TRUE)
+legend("topleft", c("feminist-identity","race-identity"),fill = c("pink","skyblue"))
+```
+
+```{r heatmap,echo = FALSE}
+imm_imp = c(mean(femLat$imm_imp),mean(femWhi$imm_imp),mean(femBla$imm_imp),
+           mean(femNat$imm_imp),mean(femAsi$imm_imp),mean(femHpi$imm_imp))
+abort_imp = c(mean(femLat$abort_imp),mean(femWhi$abort_imp),mean(femBla$abort_imp),
+           mean(femNat$abort_imp),mean(femAsi$abort_imp),mean(femHpi$abort_imp))
+ineq_imp = c(mean(femLat$ineq_imp),mean(femWhi$ineq_imp),mean(femBla$ineq_imp),
+           mean(femNat$ineq_imp),mean(femAsi$ineq_imp),mean(femHpi$ineq_imp))
+multicul_imp = c(mean(femLat$multicul_imp),mean(femWhi$multicul_imp),mean(femBla$multicul_imp),
+           mean(femNat$multicul_imp),mean(femAsi$multicul_imp),mean(femHpi$multicul_imp))
+tax_imp = c(mean(femLat$tax_imp),mean(femWhi$tax_imp),mean(femBla$tax_imp),
+           mean(femNat$tax_imp),mean(femAsi$tax_imp),mean(femHpi$tax_imp))
+
+heatmapData = data.frame('fem_id'=femID,'race_id'=femIDrace,
+                     'immig'=imm_imp,'abor'=abort_imp,'income_ineq'=ineq_imp,
+                     'multicul'=multicul_imp,'tax'=tax_imp)
+row.names(heatmapData) = c('lat','whi','bla','nat','asi','hpi')
+
+heatmap.2(as.matrix(heatmapData),col = colorRampPalette(brewer.pal(8, "PiYG"))(25),trace='none',
+          density.info = "none", xlab ='self-identity and political tendency',
+          cexRow = 1,cexCol = 1, ylab = 'races',
+          cellnote = round(as.matrix(heatmapData),digits=2),notecol = 'black')
 ```
 
 ## Conclusion
